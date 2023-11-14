@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @TestPropertySource(properties = {"spring.jpa.hibernate.ddl-auto=create-drop"})
-
 public class BookControllerTest {
     @LocalServerPort
     private Integer port;

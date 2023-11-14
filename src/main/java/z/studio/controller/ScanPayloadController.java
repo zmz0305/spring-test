@@ -1,15 +1,24 @@
 package z.studio.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.MvcUriComponentsBuilder;
+import org.springframework.core.io.Resource;
+
 import z.studio.model.ScanPayload;
 import z.studio.service.ScanPayloadService;
 import z.studio.storage.StorageService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 @RestController
 @RequestMapping("/scanPayload")
 public class ScanPayloadController {
@@ -39,10 +48,33 @@ public class ScanPayloadController {
         return scanPayloadService.createPayload(scanPayload);
     }
 
+    @GetMapping("/listfiles")
+    public String listUploadedFiles(Model model) throws IOException {
+
+        model.addAttribute("files", storageService.loadAll().map(
+                        path -> MvcUriComponentsBuilder.fromMethodName(ScanPayloadController.class,
+                                "serveFile", path.getFileName().toString()).build().toUri().toString())
+                .collect(Collectors.toList()));
+
+        return "uploadForm";
+    }
+
+    @GetMapping("/files/{filename:.+}")
+    @ResponseBody
+    public ResponseEntity<Resource> serveFile(@PathVariable String filename) {
+
+        Resource file = storageService.loadAsResource(filename);
+
+        if (file == null)
+            return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok().header(HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"" + file.getFilename() + "\"").body(file);
+    }
     // how to create the ScanPayload directly from RequestParam?
     @ResponseStatus(HttpStatus.CREATED) // 201
-    @PostMapping("/file")
-    public String uploadPayloadFile(@RequestParam("file") MultipartFile file, @RequestParam("payload") ScanPayload scanPayload) {
+    @PostMapping(value = "/file")
+    public String uploadPayloadFile(@RequestPart("file") MultipartFile file, @RequestPart("payload") ScanPayload scanPayload) {
         storageService.store(file);
         scanPayloadService.createPayload(scanPayload);
         return "redirect:/";
