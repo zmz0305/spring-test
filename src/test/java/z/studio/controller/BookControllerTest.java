@@ -66,7 +66,7 @@ public class BookControllerTest {
     @Test
     void testFindAll() {
 
-        // ResponseEntity<List> response = restTemplate.getForEntity(BASEURI + "/books", List.class);
+//         ResponseEntity<List> response = restTemplate.getForEntity(BASEURI + "/books", List.class);
 
         // find all books and return List<Book>
         ParameterizedTypeReference<List<Book>> typeRef = new ParameterizedTypeReference<>() {
