@@ -14,7 +14,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -22,13 +21,16 @@ public class FileSystemStorageService implements StorageService {
 
     private final Path rootLocation;
 
+    // For testing
+    public FileSystemStorageService() {
+        this.rootLocation = Path.of("upload-dir");
+    }
+
     @Autowired
     public FileSystemStorageService(StorageProperties properties) {
-
-        if(properties.getLocation().trim().length() == 0){
+        if (properties.getLocation().trim().isEmpty()) {
             throw new StorageException("File upload location can not be Empty.");
         }
-
         this.rootLocation = Paths.get(properties.getLocation());
     }
 
@@ -50,8 +52,7 @@ public class FileSystemStorageService implements StorageService {
                 Files.copy(inputStream, destinationFile,
                         StandardCopyOption.REPLACE_EXISTING);
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new StorageException("Failed to store file.", e);
         }
     }
@@ -80,14 +81,10 @@ public class FileSystemStorageService implements StorageService {
             Resource resource = new UrlResource(file.toUri());
             if (resource.exists() || resource.isReadable()) {
                 return resource;
+            } else {
+                throw new StorageFileNotFoundException("Could not read file: " + filename);
             }
-            else {
-                throw new StorageFileNotFoundException(
-                        "Could not read file: " + filename);
-
-            }
-        }
-        catch (MalformedURLException e) {
+        } catch (MalformedURLException e) {
             throw new StorageFileNotFoundException("Could not read file: " + filename, e);
         }
     }
@@ -101,8 +98,7 @@ public class FileSystemStorageService implements StorageService {
     public void init() {
         try {
             Files.createDirectories(rootLocation);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new StorageException("Could not initialize storage", e);
         }
     }
